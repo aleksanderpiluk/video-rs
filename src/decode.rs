@@ -193,29 +193,8 @@ impl Decoder {
     /// ```
     #[cfg(feature = "ndarray")]
     pub fn decode(&mut self) -> Result<(Time, Frame)> {
-        Ok(loop {
-            if !self.draining {
-                let packet_result = self.reader.read(self.reader_stream_index);
-                if matches!(packet_result, Err(Error::ReadExhausted)) {
-                    self.draining = true;
-                    continue;
-                }
-                let packet = packet_result?;
-                if let Some(frame) = self.decoder.decode(packet)? {
-                    break frame;
-                }
-            } else {
-                match self.decoder.drain() {
-                    Ok(Some(frame)) => break frame,
-                    Ok(None) | Err(Error::ReadExhausted) => {
-                        self.decoder.reset();
-                        self.draining = false;
-                        return Err(Error::DecodeExhausted);
-                    }
-                    Err(err) => return Err(err),
-                }
-            }
-        })
+        let mut frame = self.decode_raw()?;
+        self.decoder.raw_frame_to_time_and_frame(&mut frame)
     }
 
     /// Decode frames through iterator interface. This is similar to `decode_raw` but it returns
@@ -231,29 +210,26 @@ impl Decoder {
     /// The decoded raw frame as [`RawFrame`].
     pub fn decode_raw(&mut self) -> Result<RawFrame> {
         Ok(loop {
-            if !self.draining {
-                let packet_result = self.reader.read(self.reader_stream_index);
-                if matches!(packet_result, Err(Error::ReadExhausted)) {
-                    self.draining = true;
-                    continue;
-                }
-                let packet = packet_result?;
-                if let Some(frame) = self.decoder.decode_raw(packet)? {
+            match self.decoder.receive_frame_from_decoder() {
+                Ok(Some(frame)) => {
                     break frame;
                 }
-            } else if let Some(frame) = self.decoder.drain_raw()? {
-                break frame;
-            } else {
-                match self.decoder.drain_raw() {
-                    Ok(Some(frame)) => break frame,
-                    Ok(None) | Err(Error::ReadExhausted) => {
-                        self.decoder.reset();
-                        self.draining = false;
-                        return Err(Error::DecodeExhausted);
-                    }
-                    Err(err) => return Err(err),
+                Ok(None) | Err(Error::ReadExhausted) if self.draining => {
+                    self.decoder.reset();
+                    self.draining = false;
+                    return Err(Error::DecodeExhausted);
                 }
+                Ok(None) | Err(Error::ReadExhausted) => {}
+                Err(err) => return Err(err),
             }
+
+            let packet_result = self.reader.read(self.reader_stream_index);
+            if matches!(packet_result, Err(Error::ReadExhausted)) {
+                self.draining = true;
+                continue;
+            }
+            let packet = packet_result?;
+            self.decoder.send_packet_to_decoder(packet)?;
         })
     }
 
