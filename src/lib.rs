@@ -3,7 +3,6 @@ pub mod encode;
 pub mod error;
 pub mod extradata;
 pub mod filter;
-pub mod filter_graph;
 pub mod frame;
 pub mod hwaccel;
 pub mod init;
@@ -16,6 +15,7 @@ pub mod resize;
 pub mod rtp;
 pub mod stream;
 pub mod time;
+pub mod video_normalizer;
 
 mod ffi;
 mod ffi_hwaccel;

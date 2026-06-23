@@ -6,6 +6,7 @@ use ffmpeg::format::context::{Input as AvInput, Output as AvOutput};
 use ffmpeg::media::Type as AvMediaType;
 use ffmpeg::Error as AvError;
 use ffmpeg_next::ffi::av_seek_frame;
+use ffmpeg_next::Stream;
 
 use crate::error::Error;
 use crate::ffi;
@@ -137,6 +138,10 @@ impl Reader {
     /// * `stream_index` - Index of stream to produce information for.
     pub fn stream_info(&self, stream_index: usize) -> Result<StreamInfo> {
         StreamInfo::from_reader(self, stream_index)
+    }
+
+    pub fn stream(&self, stream_index: usize) -> Option<Stream> {
+        self.input.stream(stream_index)
     }
 
     /// Seek in reader. This will change the reader head so that it points to a location within one

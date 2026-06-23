@@ -5,7 +5,7 @@ use ffmpeg::codec::Context as AvContext;
 use ffmpeg::format::pixel::Pixel as AvPixel;
 use ffmpeg::software::scaling::{context::Context as AvScaler, flag::Flags as AvScalerFlags};
 use ffmpeg::util::error::EAGAIN;
-use ffmpeg::{Error as AvError, Rational as AvRational};
+use ffmpeg::{Error as AvError, Rational as AvRational, Stream as AVStream};
 
 use crate::error::Error;
 use crate::ffi;
@@ -306,6 +306,12 @@ impl Decoder {
         } else {
             0.0
         }
+    }
+
+    pub fn stream(&self) -> AVStream {
+        self.reader
+            .stream(self.reader_stream_index)
+            .expect("failed to get reader stream")
     }
 }
 
