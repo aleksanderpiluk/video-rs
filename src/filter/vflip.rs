@@ -37,3 +37,13 @@ pub struct VFlipFilterHandle {
     input: InPadHandle,
     output: OutPadHandle,
 }
+
+impl VFlipFilterHandle {
+    pub fn input(&self) -> InPadHandle {
+        self.input
+    }
+
+    pub fn output(&self) -> OutPadHandle {
+        self.output
+    }
+}

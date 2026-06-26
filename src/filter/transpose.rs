@@ -65,6 +65,16 @@ pub struct TransposeFilterHandle {
     output: OutPadHandle,
 }
 
+impl TransposeFilterHandle {
+    pub fn input(&self) -> InPadHandle {
+        self.input
+    }
+
+    pub fn output(&self) -> OutPadHandle {
+        self.output
+    }
+}
+
 #[derive(Debug)]
 pub enum TransposeDir {
     CClockFlip,

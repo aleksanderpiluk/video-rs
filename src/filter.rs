@@ -7,6 +7,7 @@ mod null_sink;
 mod null_src;
 mod overlay;
 mod rotate;
+mod scale;
 mod split;
 mod transpose;
 mod vflip;
@@ -20,13 +21,16 @@ pub use null_sink::{NullSinkFilter, NullSinkFilterHandle};
 pub use null_src::{NullSrcFilter, NullSrcFilterHandle};
 pub use overlay::{OverlayFilter, OverlayFilterHandle};
 pub use rotate::{RotateFilter, RotateFilterHandle};
+pub use scale::{ScaleFilter, ScaleFilterHandle};
 pub use split::{SplitFilter, SplitFilterHandle};
 pub use transpose::{TransposeDir, TransposeFilter, TransposeFilterHandle, TransposePassthrough};
 pub use vflip::{VFlipFilter, VFlipFilterHandle};
 
 use ffmpeg::filter::{Context as AVContext, Graph as AvFilterGraph};
 
-use crate::frame::RawFrame;
+use crate::{Error, frame::RawFrame};
+
+type Result<T> = std::result::Result<T, Error>;
 
 pub struct FilterGraphBuilder {
     state: FilterGraphBuilderState,
@@ -51,10 +55,8 @@ impl FilterGraphBuilder {
         self
     }
 
-    pub fn build(self) -> FilterGraph {
+    pub fn build(self) -> Result<FilterGraph> {
         let mut graph = AvFilterGraph::new();
-
-        println!("{:#?}", self.state);
 
         let mut av_contexts: Vec<Option<AVContext>> = (0..self.state.nodes.len())
             .into_iter()
@@ -78,13 +80,13 @@ impl FilterGraphBuilder {
                 else {
                     todo!()
                 };
-                println!("link {} to {} - ctx", out_pad.index, in_pad.index);
                 out_filter.link(out_pad.index, in_filter, in_pad.index);
             }
         }
+        
+        graph.validate()?;
 
-        graph.validate().unwrap();
-        FilterGraph { graph }
+        Ok(FilterGraph { graph })
     }
 }
 

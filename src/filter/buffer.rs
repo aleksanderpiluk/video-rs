@@ -13,7 +13,7 @@ pub struct BufferFilter {
     height: u32,
     pix_fmt: PixelFormat,
     time_base: AvRational,
-    // frame_rate: String,
+    pixel_aspect: Option<AvRational>, // frame_rate: String,
 }
 
 impl BufferFilter {
@@ -30,7 +30,13 @@ impl BufferFilter {
             height,
             pix_fmt,
             time_base,
+            pixel_aspect: None,
         }
+    }
+
+    pub fn pixel_aspect(mut self, pixel_aspect: AvRational) -> Self {
+        self.pixel_aspect = Some(pixel_aspect);
+        self
     }
 }
 
@@ -38,15 +44,20 @@ impl Filter<BufferFilterHandle> for BufferFilter {}
 
 impl Synthesizeable for BufferFilter {
     fn synthesize(&self, ctx: &mut super::SynthesisContext) {
-        ctx.add_filter("buffer", &self.id)
+        let mut filter = ctx.add_filter("buffer", &self.id)
             .add_param("width", &self.width.to_string())
             .add_param("height", &self.height.to_string())
             .add_param(
                 "pix_fmt",
                 &(AVPixelFormat::from(self.pix_fmt) as i32).to_string(),
             )
-            .add_param("time_base", &self.time_base.to_string())
-            .build();
+            .add_param("time_base", &self.time_base.to_string());
+        
+        if let Some(pixel_aspect) = self.pixel_aspect {
+            filter = filter.add_param("sar", &pixel_aspect.to_string());
+        }
+
+        filter.build();
     }
 }
 

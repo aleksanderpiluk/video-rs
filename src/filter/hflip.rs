@@ -37,3 +37,13 @@ pub struct HFlipFilterHandle {
     input: InPadHandle,
     output: OutPadHandle,
 }
+
+impl HFlipFilterHandle {
+    pub fn input(&self) -> InPadHandle {
+        self.input
+    }
+
+    pub fn output(&self) -> OutPadHandle {
+        self.output
+    }
+}
